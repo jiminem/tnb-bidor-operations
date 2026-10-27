@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CRP Dashboard | Kedai Tenaga TNB Bidor</title>
+  <link rel="stylesheet" href="styles.css">
+
+  <script src="dashboard-ui.js"></script>
+  <script src="shared-client.js"></script>
+</head>
+<body class="crp-page auth-pending">
+  <a class="skip-link" href="#mainContent">Skip to content</a>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand"><img class="brand-mark" src="images.png" alt="TNB logo"><div>Kedai Tenaga TNB Bidor<small>COLLECTION &amp; RECOVERY</small></div></div>
+      <div class="top-right"><select id="language" class="control" aria-label="Language"><option value="en">English</option><option value="ms">Bahasa Malaysia</option></select><span id="staffLabel"></span><span id="syncStatus" class="sync-status" role="status">Connecting...</span><button class="btn btn-quiet" id="logout">Log out</button></div>
+    </header>
+    <nav class="main-nav" aria-label="Main menu">
+      <div class="nav-inner">
+        <a class="nav-link" href="index.html" id="dailyNav">Daily Operations</a>
+        <a class="nav-link" href="crp.html" id="crpNav" aria-current="page">CRP Dashboard</a>
+      </div>
+    </nav>
+    <main class="layout" id="mainContent">
+      <div class="heading"><div><div class="eyebrow" id="eyebrow">Collection &amp; Recovery</div><h1 id="title">CRP Dashboard</h1><p id="subtitle">An overview of collection and recovery operations.</p></div><div class="heading-meta"><span class="live-dot" aria-hidden="true"></span><span id="dashboardDate"></span></div></div>
+      <div class="stats">
+        <div class="stat"><label id="collectionLabel">Collection</label><div class="num" id="collectionTotal">&mdash;</div><p class="stat-note" id="collectionNote">No collection data added</p></div>
+        <div class="stat"><label id="recoveryLabel">Recovery</label><div class="num" id="recoveryTotal">&mdash;</div><p class="stat-note" id="recoveryNote">No recovery data added</p></div>
+        <div class="stat"><label id="updatedLabel">Last updated</label><div class="num date-total" id="lastUpdated">&mdash;</div><p class="stat-note" id="updatedNote">Awaiting the first CRP entry</p></div>
+      </div>
+      <section class="panel import-panel" aria-labelledby="importTitle">
+        <div class="modal-head"><h2 id="importTitle">Add CRP data</h2><p id="importHelp">Upload a spreadsheet, link Google Sheets, or enter daily amounts manually.</p></div>
+        <div class="source-grid">
+          <div class="source-card">
+            <h3 id="uploadTitle">Import Excel / CSV</h3>
+            <label for="importFile" id="fileLabel">Choose a spreadsheet</label>
+            <input class="control file-control" id="importFile" type="file" accept=".xlsx,.xls,.csv,.tsv">
+            <p class="helper" id="fileHelp">Excel, CSV or TSV, up to 5 MB. Select a worksheet and match your columns before saving.</p>
+            <button class="btn btn-quiet" id="templateBtn" type="button">Download CSV template</button>
+          </div>
+          <form class="source-card" id="sheetsForm">
+            <h3 id="sheetsTitle">Link Google Sheets</h3>
+            <label for="sheetsUrl" id="urlLabel">Published CSV link</label>
+            <input class="control" id="sheetsUrl" type="url" placeholder="https://docs.google.com/spreadsheets/..." required>
+            <p class="helper" id="sheetsHelp">In Google Sheets, use File / Share / Publish to web and choose CSV. Published data is public; use file import for private data. This connection is read-only.</p>
+            <div class="button-row"><button class="btn btn-primary" type="submit" id="fetchBtn">Load / refresh preview</button><button class="btn btn-quiet" id="unlinkBtn" type="button">Unlink</button></div>
+          </form>
+        </div>
+        <p class="import-message" id="importMessage" role="status" aria-live="polite"></p>
+        <div class="preview-section" id="previewSection" hidden>
+          <h3 id="previewTitle">Review spreadsheet</h3>
+          <div class="mapping-grid">
+            <div class="field"><label for="worksheet" id="worksheetLabel">Worksheet</label><select class="control" id="worksheet"></select></div>
+            <div class="field"><label for="dateColumn" id="dateColumnLabel">Date column</label><select class="control" id="dateColumn"></select></div>
+            <div class="field"><label for="collectionColumn" id="collectionColumnLabel">Collection (RM) column</label><select class="control" id="collectionColumn"></select></div>
+            <div class="field"><label for="recoveryColumn" id="recoveryColumnLabel">Recovery (RM) column</label><select class="control" id="recoveryColumn"></select></div>
+          </div>
+          <p class="helper" id="previewSummary"></p>
+          <div class="table-wrap"><table class="table"><thead><tr><th>Date</th><th>Collection (RM)</th><th>Recovery (RM)</th></tr></thead><tbody id="previewRows"></tbody></table></div>
+          <p class="helper" id="replaceHelp">Saving replaces the CRP dataset with all rows in this preview. Daily Operations data is unaffected.</p>
+          <div class="button-row"><button class="btn btn-primary" id="confirmImport" disabled>Replace CRP data</button><button class="btn btn-quiet" id="cancelImport">Cancel preview</button></div>
+        </div>
+      </section>
+      <div class="operations-grid">
+        <section class="panel">
+          <div class="modal-head"><h2 id="manualTitle">Manual daily entry</h2><p id="manualHelp">One total per date. Saving an existing date updates its amounts.</p></div>
+          <form class="form" id="manualForm">
+            <div class="fields">
+              <div class="field"><label for="crpDate" id="manualDateLabel">Date</label><input type="date" id="crpDate" required></div>
+              <div class="field"><label for="manualCollection" id="manualCollectionLabel">Collection (RM)</label><input type="number" id="manualCollection" min="0" max="1000000000" step="0.01" required placeholder="0.00"></div>
+              <div class="field"><label for="manualRecovery" id="manualRecoveryLabel">Recovery (RM)</label><input type="number" id="manualRecovery" min="0" max="1000000000" step="0.01" required placeholder="0.00"></div>
+            </div>
+            <div class="form-actions"><button class="btn btn-primary" id="manualSave">Save daily amounts</button></div>
+            <p class="helper" id="manualMessage" role="status" aria-live="polite"></p>
+          </form>
+        </section>
+        <section class="panel" aria-labelledby="overviewTitle">
+          <div class="table-top"><strong id="overviewTitle">Collection &amp; Recovery records</strong><button class="btn btn-quiet" id="exportCrp">Export CSV</button></div>
+          <div class="table-wrap"><table class="table"><thead><tr><th id="recordDateLabel">Date</th><th id="recordCollectionLabel">Collection (RM)</th><th id="recordRecoveryLabel">Recovery (RM)</th><th></th></tr></thead><tbody id="crpRows"></tbody></table></div>
+          <div class="foot"><span id="crpSummary"></span><span id="sourceLabel">No data yet</span></div>
+        </section>
+      </div>
+    </main>
+  </div>
+  <div class="session-loading" id="sessionLoading" role="status" aria-live="polite"><div class="session-loading-card"><span class="session-spinner" aria-hidden="true"></span><p id="sessionLoadingText">Checking your staff session...</p><button type="button" class="btn btn-quiet" id="retrySession" hidden>Retry connection</button></div></div>
+  <div class="login" id="login">
+    <div class="login-card"><div class="brand"><img class="brand-mark" src="images.png" alt="TNB logo"><div>Kedai Tenaga TNB Bidor<small>COLLECTION &amp; RECOVERY</small></div></div><h2>Staff access</h2><p>Enter your staff ID to open the CRP Dashboard.</p>
+      <form id="loginForm"><label for="staffNumber">Staff ID</label><input id="staffNumber" autocomplete="username" required><p class="helper">Enter your 6-10 digit staff ID to access shared staff data.</p>
+        <div class="login-error" id="loginError" role="alert"></div><button class="btn btn-primary" type="submit">Continue</button></form>
+    </div>
+  </div>
+  <script src="vendor/xlsx.full.min.js"></script>
+  <script src="crp.js"></script>
+</body>
+</html>

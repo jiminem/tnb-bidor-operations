@@ -1,0 +1,20 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert/strict'),S=require('../lib/shared.cjs');
+const html=fs.readFileSync('index.html','utf8'),els={};
+function el(id){let value='';const e={textContent:'',hidden:false,disabled:false,open:false,dataset:{},parentElement:{hidden:false},attributes:{},classList:{toggle(){}},querySelector(){return {disabled:false}},reset(){},focus(){},scrollIntoView(){},showModal(){this.open=true},close(){this.open=false},setAttribute(k,v){this.attributes[k]=v}};Object.defineProperty(e,'value',{get:()=>value,set:v=>value=String(v)});Object.defineProperty(e,'innerHTML',{get:()=>e.html||'',set:s=>{e.html=s;if(id==='serviceEntries')for(const m of s.matchAll(/id="([^"]+)"/g))els[m[1]]=el(m[1]);}});return e;}
+for(const m of html.split('<script>')[0].matchAll(/id="([^"]+)"/g))els[m[1]]=el(m[1]);
+let state=S.initial(),notify,staff='10077218';
+const shared={onChange(fn){notify=fn},start(){notify({staff,...S.snapshot(state)})},async mutate(action,values){S.mutate(state,staff,{action,...values});notify({staff,...S.snapshot(state)});},async login(id){staff=id;this.start();},async logout(){notify(null)}};
+const ctx={console,Intl,Date,setInterval(){},SharedDashboard:shared,window:{addEventListener(){}},localStorage:{getItem(){return null},setItem(){}},document:{getElementById:id=>els[id],documentElement:{},addEventListener(){},body:{classList:{toggle(){}}}}};
+vm.createContext(ctx);vm.runInContext(fs.readFileSync('dashboard-ui.js','utf8'),ctx);vm.runInContext(html.match(/<script>([\s\S]*?)<\/script>/)[1],ctx);const run=s=>vm.runInContext(s,ctx);
+(async()=>{
+ await run('addCustomer(0)');await run('addCustomer(0)');assert.equal(els.todayTotal.textContent,2);assert.equal(els.serviceBadge0.textContent,'2');
+ S.mutate(state,'10075849',{action:'increment',day:S.today(),service:1});shared.start();assert.equal(els.todayTotal.textContent,3);assert.equal(els.dailyTotal.textContent,'2');
+ els.serviceSearch.value='solar';els.serviceSearch.oninput();assert.equal(els.addService0.parentElement.hidden,true);assert.equal(els.addService14.parentElement.hidden,false);
+ els.adjustCounts.onclick();els.serviceCount0.value=5;await els.dailyForm.onsubmit({preventDefault(){}});assert.equal(els.todayTotal.textContent,6);
+ els.adjustCounts.onclick();els.serviceCount0.value=10;S.mutate(state,staff,{action:'increment',day:S.today(),service:0});shared.start();await els.dailyForm.onsubmit({preventDefault(){}});assert.match(els.feedback.textContent,/another device/);assert.equal(els.todayTotal.textContent,7);
+ await els.toggleOperations.onclick();assert.equal(els.addService0.disabled,true);await els.toggleOperations.onclick();assert.equal(els.addService0.disabled,false);
+ els.openMonthBreakdown.onclick();assert(els.monthDialog.open);els.closeMonthDialog.onclick();assert(!els.monthDialog.open);
+ els.language.onchange({target:{value:'ms'}});assert.equal(els.entryTitle.textContent,'Kaunter perkhidmatan');
+ await els.logout.onclick();assert.equal(els.staffLabel.textContent,'');
+ console.log('PASS daily shared UI: live staff snapshots, counts, search, corrections/conflicts, operations, popup, translations, logout.');
+})().catch(e=>{console.error(e);process.exitCode=1});

@@ -1,0 +1,16 @@
+# Local hosting checkouts and generated deployment files
+sites/
+deployments/
+.vercel/
+.openai/
+node_modules/
+.env
+.env.*
+!.env.example
+*.log
+*.tar.gz
+*.zip
+.DS_Store
+Thumbs.db
+
+public/

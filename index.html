@@ -1,0 +1,325 @@
+﻿<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kedai Tenaga TNB Bidor Daily Customer Count</title>
+  <link rel="stylesheet" href="styles.css">
+
+  <script src="dashboard-ui.js"></script>
+  <script src="shared-client.js"></script>
+</head>
+
+<body class="daily-page auth-pending">
+  <a class="skip-link" href="#mainContent">Skip to content</a>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand"><img class="brand-mark" src="images.png" alt="TNB logo">
+        <div>Kedai Tenaga TNB Bidor<small>DAILY OPERATIONS</small></div>
+      </div>
+      <div class="top-right"><select id="language" class="control" aria-label="Language">
+          <option value="en">English</option>
+          <option value="ms">Bahasa Malaysia</option>
+        </select><span id="staffLabel"></span><span id="syncStatus" class="sync-status" role="status">Connecting...</span><button class="btn btn-quiet" id="logout">Log out</button></div>
+    </header>
+    <nav class="main-nav" aria-label="Main menu">
+      <div class="nav-inner">
+        <a class="nav-link" href="index.html" id="dailyNav" aria-current="page">Daily Operations</a>
+        <a class="nav-link" href="crp.html" id="crpNav">CRP Dashboard</a>
+      </div>
+    </nav>
+    <main class="layout" id="mainContent">
+      <div class="heading">
+        <div>
+          <div class="eyebrow" id="eyebrow">Daily operations</div>
+          <h1 id="title">Customers attended</h1>
+          <p id="subtitle">Record how many customers you attended each day.</p>
+        </div>
+        <div class="heading-meta"><span class="live-dot" aria-hidden="true"></span><span id="dashboardDate"></span></div>
+      </div>
+      <div class="stats">
+        <div class="stat"><label id="todayLabel">Customers today</label>
+          <div class="num" id="todayTotal">0</div>
+        </div>
+        <button type="button" class="stat monthly-card" id="openMonthBreakdown" aria-haspopup="dialog"
+          aria-controls="monthDialog" aria-labelledby="monthLabel" aria-describedby="monthPeriod monthHint">
+          <span class="stat-title" id="monthLabel">Customers by month</span>
+          <span class="num" id="monthTotal">0</span>
+          <span class="stat-note" id="monthPeriod"></span>
+          <span class="month-hint" id="monthHint">View service breakdown </span>
+        </button>
+        <div class="stat"><label id="allLabel">Customers overall</label>
+          <div class="num" id="allTotal">0</div>
+        </div>
+      </div>
+      <div class="operations-grid daily-operations">
+        <section class="panel">
+          <div class="modal-head">
+            <div>
+              <h2 id="entryTitle">Daily staff entry</h2>
+              <p id="entryHelp">Enter the customer count beside each service. The daily total is calculated
+                automatically. Count each customer under one main service.</p>
+            </div>
+          </div>
+          <form class="form" id="dailyForm">
+            <div class="fields">
+              <div class="field"><label for="day" id="dayLabel">Date</label><input type="date" id="day" required></div>
+            </div>
+            <div class="operation-toolbar"><span id="operationStatus" role="status"></span><button type="button"
+                class="btn btn-quiet" id="toggleOperations">End today's operations</button></div>
+            <div class="counter-heading">            <div class="daily-total-row"><label for="dailyTotal" id="dailyTotalLabel">Daily total</label><output
+                id="dailyTotal" aria-live="polite">0</output></div>
+<div class="counter-tools"><label class="service-search"><span class="search-symbol" aria-hidden="true"></span><input class="control" id="serviceSearch" type="search" placeholder="Find a service..." aria-label="Find a service"></label><button type="button" class="btn btn-quiet" id="adjustCounts" aria-pressed="false">Adjust counts</button></div></div>
+            <p id="feedback" role="status" aria-live="polite"></p>
+            <div class="service-legend" id="serviceLegend" aria-label="Service categories"></div>
+            <div class="service-entry-grid" id="serviceEntries"></div>
+            <p class="helper" id="noServices" hidden>No matching services.</p>
+            <div class="service-entry-row legacy-entry" id="legacyEntry" hidden><label for="legacyCount"
+                id="legacyLabel">Previous totals (no service assigned)</label><input class="control service-count"
+                type="number" id="legacyCount" min="0" max="100000" step="1" value="0"></div>
+            <p class="helper" id="legacyHelp" hidden>Previous unassigned counts are included below. When assigning them
+              to services, reduce the unassigned count to avoid counting twice.</p>
+            <p id="entryNote">Your staff ID is saved automatically.</p>
+            <div class="form-actions"><button class="btn btn-primary" type="submit" id="save">Save daily total</button>
+            </div>
+            
+          </form>
+        </section>
+        <section class="panel records-panel">
+          <div class="table-top"><strong id="recordsTitle">Daily records</strong>
+            <div class="toolbar-actions"><label for="month" id="monthFilterLabel">Month</label><input class="control"
+                type="month" id="month" required aria-describedby="monthPeriod"><button class="btn btn-quiet"
+                id="export">Export CSV</button></div>
+          </div>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th id="dateHeading">Date</th>
+                  <th id="staffHeading">Staff ID</th>
+                  <th id="countHeading">Customers attended</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="rows"></tbody>
+            </table>
+          </div>
+          <div class="foot"><span id="summary"></span><span id="storageNote">Data is stored in this browser</span></div>
+        </section>
+      </div>
+      <section class="panel trend-panel" aria-labelledby="trendTitle"><div class="table-top"><div><h2 id="trendTitle">Customer activity</h2><p class="helper" id="trendHelp">Customers attended over the last 7 days · all staff</p></div><span class="status-pill" id="trendRange">Last 7 days</span></div><div id="dailyTrend" class="trend-chart"></div></section>
+      <dialog id="monthDialog" class="month-dialog" aria-labelledby="breakdownTitle">
+        <div class="table-top dialog-heading">
+          <h2 id="breakdownTitle">Monthly customers by service</h2><button type="button" class="btn btn-quiet"
+            id="closeMonthDialog">Close</button>
+        </div>
+        <div class="dialog-month-filter"><label for="breakdownMonthInput" id="dialogMonthLabel">Month</label><input
+            class="control" type="month" id="breakdownMonthInput" required><span class="helper"
+            id="breakdownMonth"></span></div>
+        <div id="serviceBreakdown" class="service-list"></div>
+      </dialog>
+    </main>
+  </div>
+  <div class="session-loading" id="sessionLoading" role="status" aria-live="polite"><div class="session-loading-card"><span class="session-spinner" aria-hidden="true"></span><p id="sessionLoadingText">Checking your staff session...</p><button type="button" class="btn btn-quiet" id="retrySession" hidden>Retry connection</button></div></div>
+  <div class="login" id="login">
+    <div class="login-card">
+      <div class="brand"><img class="brand-mark" src="images.png" alt="TNB logo">
+        <div>Kedai Tenaga TNB Bidor<small>DAILY OPERATIONS</small></div>
+      </div>
+      <h2>Staff access</h2>
+      <p>Enter your staff ID to record your daily customer count.</p>
+      <form id="loginForm"><label for="staffNumber">Staff ID</label><input id="staffNumber" autocomplete="username"
+          required>
+        <p class="helper">Enter your 6-10 digit staff ID to access shared staff data.</p>
+        <div class="login-error" id="loginError" role="alert"></div><button class="btn btn-primary"
+          type="submit">Continue</button>
+      </form>
+    </div>
+  </div>
+  <script>
+    const SERVICES = [
+      'Permohonan Tukar Nama',
+      'Permohonan Sambung Semula',
+      'Permohonan TTP (Tutup Akaun)',
+      'Pertanyaan / Permohonan Product Change (LV, TOU & LV GEN MI)',
+      'Pertanyaan / Permohonan Load Change',
+      'Pertanyaan / Permohonan Baru Online MyTNB / Kontraktor',
+      'Pertanyaan / Permohonan KYC',
+      'Pertanyaan / Permohonan MyTNB Apps',
+      'Pertanyaan / Permohonan Aduan Lampu Jalan',
+      'Pertanyaan / Semakan Bil / Tunggakan',
+      'Aduan Bekalan / Gangguan',
+      'Pertanyaan / Semakan / Cetak Bil / Statement Bil',
+      'Pertanyaan / Permohonan TOU / Smart Meter',
+      'Pertanyaan / Aduan EC',
+      'Pertanyaan / Permohonan Solar ATAP',
+      'Pertanyaan / Permohonan ASL',
+      'Kes Khas (Pelbagai)',
+      'Kemaskini Maklumat Pelanggan',
+      'Pertanyaan / Permohonan Deposit Refund',
+      'Pertanyaan / Permohonan Kawalan Kredit (Isu Berkaitan)',
+      'Pertanyaan / Permohonan RJO',
+      'Lain-lain'
+    ];
+    const LEGACY_SERVICE = 'uncategorized';
+    const $ = id => document.getElementById(id);
+    const today = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuala_Lumpur', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+    let records=[], staff=null, sharedVersions={}, sharedClosed={}, editingVersion=0, loadedDay='';
+    let lang = localStorage.getItem('Kedai Tenaga TNB Bidor-cs-language') === 'ms' ? 'ms' : 'en';
+    const text = {
+      en: { adjustCounts:'Adjust counts', doneAdjusting:'Cancel changes', noServices:'No matching services.', trendTitle:'Customer activity', trendHelp:'Customers attended over the last 7 days · all staff', trendRange:'Last 7 days', endOperations:"End today's operations", reopenOperations:"Reopen today's operations", operationsOpen:'Open · customer clicks save automatically', operationsClosed:'Closed · counting paused for today', historicalDay:'Previous day · use Adjust counts to make corrections', added:'Customer added and saved.', clickBlocked:'Select today and reopen operations to count customers.', clickLimit:'This service has reached its daily limit.', monthHint: 'View service breakdown', closeMonthDialog: 'Close', dialogMonthLabel: 'Month', dailyTotalLabel: 'Your daily total', legacyLabel: 'Previous totals (no service assigned)', legacyHelp: 'Previous unassigned counts are included below. When assigning them to services, reduce the unassigned count to avoid counting twice.', serviceLabel: 'Service type', serviceHeading: 'Service', breakdownTitle: 'Monthly customers by service', legacy: 'Previous totals (no service assigned)', chooseService: 'Choose service type', invalidService: 'Choose a service type.', dailyNav: 'Daily Operations', crpNav: 'CRP Dashboard', eyebrow: 'Daily operations', title: 'Customers attended', subtitle: 'Record how many customers you attended each day.', todayLabel: 'Customers today', monthLabel: 'Customers by month', monthFilterLabel: 'Month', allLabel: 'Customers overall', entryTitle: 'Service counter', entryHelp: "Click a service once for each customer attended. Counts save immediately. Use Adjust counts to make corrections.", dayLabel: 'Date', countLabel: 'Number of customers attended', entryNote: 'Each click adds one customer for your staff ID. Count each customer under one main service.', save: 'Save corrections', recordsTitle: 'Daily records', export: 'Export CSV', dateHeading: 'Date', staffHeading: 'Staff ID', countHeading: 'Customers attended', storageNote: 'Shared across staff devices', logout: 'Log out', empty: 'No daily totals yet.', edit: 'Edit', saved: 'Daily total saved to shared data.', failed: 'Could not save. Please try again.', future: 'Choose today or an earlier date.', invalid: 'Enter a whole number from 0 to 100,000.', noExport: 'No records to export.' },
+      ms: { adjustCounts:'Ubah bilangan', doneAdjusting:'Batal perubahan', noServices:'Tiada perkhidmatan sepadan.', trendTitle:'Aktiviti pelanggan', trendHelp:'Pelanggan dilayan sepanjang 7 hari lalu · semua staf', trendRange:'7 hari lalu', endOperations:'Tamatkan operasi hari ini', reopenOperations:'Buka semula operasi hari ini', operationsOpen:'Dibuka · klik pelanggan disimpan automatik', operationsClosed:'Ditutup · kiraan hari ini dijeda', historicalDay:'Tarikh terdahulu · gunakan Ubah bilangan untuk pembetulan', added:'Pelanggan ditambah dan disimpan.', clickBlocked:'Pilih hari ini dan buka operasi untuk mengira pelanggan.', clickLimit:'Perkhidmatan ini telah mencapai had harian.', monthHint: 'Lihat pecahan perkhidmatan', closeMonthDialog: 'Tutup', dialogMonthLabel: 'Bulan', dailyTotalLabel: 'Jumlah harian anda', legacyLabel: 'Jumlah terdahulu (tiada jenis perkhidmatan)', legacyHelp: 'Jumlah terdahulu disertakan dalam jumlah harian. Kurangkan jumlah tanpa kategori apabila mengagihkannya kepada perkhidmatan supaya tidak dikira dua kali.', serviceLabel: 'Jenis perkhidmatan', serviceHeading: 'Perkhidmatan', breakdownTitle: 'Pelanggan bulanan mengikut perkhidmatan', legacy: 'Jumlah terdahulu (tiada jenis perkhidmatan)', chooseService: 'Pilih jenis perkhidmatan', invalidService: 'Pilih jenis perkhidmatan.', dailyNav: 'Operasi Harian', crpNav: 'Papan Pemuka CRP', eyebrow: 'Operasi harian', title: 'Pelanggan dilayan', subtitle: 'Rekod jumlah pelanggan yang anda layan setiap hari.', todayLabel: 'Pelanggan hari ini', monthLabel: 'Pelanggan mengikut bulan', monthFilterLabel: 'Bulan', allLabel: 'Jumlah keseluruhan pelanggan', entryTitle: 'Kaunter perkhidmatan', entryHelp: 'Klik perkhidmatan sekali bagi setiap pelanggan dilayan. Bilangan disimpan serta-merta. Gunakan Ubah bilangan untuk pembetulan.', dayLabel: 'Tarikh', countLabel: 'Bilangan pelanggan dilayan', entryNote: 'Setiap klik menambah seorang pelanggan untuk ID staf anda. Kira setiap pelanggan di bawah satu perkhidmatan utama.', save: 'Simpan pembetulan', recordsTitle: 'Rekod harian', export: 'Eksport CSV', dateHeading: 'Tarikh', staffHeading: 'ID staf', countHeading: 'Pelanggan dilayan', storageNote: 'Dikongsi antara peranti staf', logout: 'Log keluar', empty: 'Belum ada jumlah harian.', edit: 'Edit', saved: 'Jumlah harian disimpan.', failed: 'Tidak dapat menyimpan. Sila cuba lagi.', future: 'Pilih hari ini atau tarikh sebelumnya.', invalid: 'Masukkan nombor bulat dari 0 hingga 100,000.', noExport: 'Tiada rekod untuk dieksport.' }
+    };
+    let adjusting = false;
+    const t = key => text[lang][key];
+    const visible = () => records.filter(r => !$('month').value || r.day.startsWith($('month').value)).sort((a, b) => b.day.localeCompare(a.day) || a.staff.localeCompare(b.staff));
+    const esc = value => String(value).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const serviceName = service => service === LEGACY_SERVICE ? t('legacy') : SERVICES[service];
+    const SERVICE_GROUPS = [0,0,0,1,0,0,2,2,3,1,3,1,2,3,2,3,3,0,0,1,3,3];
+    const GROUP_NAMES = {en:['Account & applications','Billing & payments','Digital & smart energy','Enquiries & support'],ms:['Akaun & permohonan','Bil & pembayaran','Digital & tenaga pintar','Pertanyaan & sokongan']};
+    function renderServiceLabels() {
+      $('serviceLegend').innerHTML = GROUP_NAMES[lang].map((name,i) => `<span class="legend-chip tone-${i}"><span class="legend-dot" aria-hidden="true"></span>${esc(name)}</span>`).join('');
+      SERVICES.forEach((_,i) => { $('serviceGroup'+i).textContent=GROUP_NAMES[lang][SERVICE_GROUPS[i]]; $('serviceUnit'+i).textContent=lang==='ms'?'pelanggan':'customers'; });
+    }
+    function buildServiceEntries() {
+      $('serviceEntries').innerHTML = SERVICES.map((name, i) => `<div class="service-entry-row click-service-row tone-${SERVICE_GROUPS[i]}" data-service-row="${i}"><button type="button" class="service-add" id="addService${i}" data-add-service="${i}"><span class="service-number" aria-hidden="true">${String(i+1).padStart(2,'0')}</span><span class="service-group" id="serviceGroup${i}"></span><span class="service-name" id="serviceName${i}">${esc(name)}</span><span class="service-card-footer"><span class="service-current"><span class="service-badge" id="serviceBadge${i}">0</span><span class="service-unit" id="serviceUnit${i}"></span></span><span class="add-one" aria-hidden="true">+1</span></span></button><input class="control service-count" type="number" id="serviceCount${i}" aria-labelledby="serviceName${i}" min="0" max="100000" step="1" value="0" required inputmode="numeric" readonly></div>`).join('');
+      renderServiceLabels();
+    }
+    function updateDailyTotal() {
+      const fields = SERVICES.map((_, i) => $('serviceCount' + i));
+      if (!$('legacyEntry').hidden) fields.push($('legacyCount'));
+      const valid = fields.every(input => input.value.trim() !== '' && Number.isSafeInteger(Number(input.value)) && Number(input.value) >= 0 && Number(input.value) <= 100000);
+      $('dailyTotal').textContent = valid ? fields.reduce((total, input) => total + Number(input.value), 0).toLocaleString(lang === 'ms' ? 'ms-MY' : 'en-GB') : '\u2014';
+      return valid;
+    }
+    function render() {
+      Object.keys(text[lang]).forEach(id => { if ($(id)) $(id).textContent = t(id) });
+      document.documentElement.lang = lang; $('language').value = lang;
+      $('staffLabel').textContent = staff || ''; renderServiceLabels(); updateDailyTotal(); updateOperationState();
+      $('serviceSearch').placeholder = lang === 'ms' ? 'Cari perkhidmatan...' : 'Find a service...';
+      $('serviceSearch').setAttribute('aria-label', $('serviceSearch').placeholder);
+      $('adjustCounts').textContent = adjusting ? t('doneAdjusting') : t('adjustCounts');
+      globalThis.DashboardUI?.updateDate(lang); globalThis.DashboardUI?.dailyTrend(records,lang);
+      const sum = list => list.reduce((n, r) => n + r.count, 0);
+      $('todayTotal').textContent = sum(records.filter(r => r.day === today()));
+      const selectedMonth = $('month').value || today().slice(0, 7);
+      $('monthTotal').textContent = sum(records.filter(r => r.day.startsWith(selectedMonth)));
+      const monthName = new Intl.DateTimeFormat(lang === 'ms' ? 'ms-MY' : 'en-GB', { month: 'long', year: 'numeric', timeZone: 'Asia/Kuala_Lumpur' }).format(new Date(`${selectedMonth}-01T00:00:00+08:00`));
+      $('monthPeriod').textContent = `${monthName} ${lang === 'ms' ? 'Semua staf' : 'All staff'}`;
+      $('allTotal').textContent = sum(records);
+      const list = visible();
+      const days = new Map();
+      list.forEach(r => { const key = r.day + '|' + r.staff; const item = days.get(key) || { day: r.day, staff: r.staff, count: 0 }; item.count += r.count; days.set(key, item); });
+      $('rows').innerHTML = days.size ? [...days.values()].map(r => `<tr><td>${esc(r.day)}</td><td>${esc(r.staff)}</td><td>${r.count}</td><td>${r.staff === staff ? `<button class="action-link" data-day="${esc(r.day)}">${t('edit')}</button>` : ''}</td></tr>`).join('') : `<tr><td colspan="4" class="empty">${t('empty')}</td></tr>`;
+      $('breakdownMonth').textContent = monthName; $('breakdownMonthInput').value = selectedMonth;
+      const serviceTotals = SERVICES.map((name, i) => ({ name, count: sum(list.filter(r => r.service === i)), number: i + 1 }));
+      const legacy = list.filter(r => r.service === LEGACY_SERVICE);
+      if (legacy.length) serviceTotals.push({ name: t('legacy'), count: sum(legacy), number: '\u2014' });
+      $('serviceBreakdown').innerHTML = serviceTotals.map(item => `<div class="service-item"><span class="service-number">${item.number}</span><span>${esc(item.name)}</span><strong>${item.count}</strong></div>`).join('');
+      $('summary').textContent = `${days.size} ${lang === 'ms' ? 'rekod' : 'records'} · ${sum(list)} ${lang === 'ms' ? 'pelanggan' : 'customers'}`;
+    }
+    function loadDay() {
+      loadedDay=$('day').value; editingVersion=sharedVersions[loadedDay+'|'+staff]||0;
+      const dayRecords = records.filter(r => r.staff === staff && r.day === $('day').value);
+      SERVICES.forEach((_, i) => { $('serviceCount' + i).value = dayRecords.filter(r => r.service === i).reduce((n, r) => n + r.count, 0); });
+      const legacy = dayRecords.filter(r => r.service === LEGACY_SERVICE);
+      $('legacyEntry').hidden = $('legacyHelp').hidden = legacy.length === 0;
+      $('legacyCount').value = legacy.reduce((n, r) => n + r.count, 0);
+      $('feedback').textContent = ''; updateDailyTotal(); updateOperationState();
+      SERVICES.forEach((_,i) => $('serviceBadge'+i).textContent = $('serviceCount'+i).value);
+      filterServices();
+    }
+    function closedDays() { return sharedClosed; }
+    function operationKey() { return today() + '|' + staff; }
+    function updateOperationState() {
+      const isToday = $('day').value === today(), closed = closedDays()[operationKey()] === true;
+      $('operationStatus').dataset.state = !isToday ? 'history' : closed ? 'closed' : 'open';
+      $('operationStatus').textContent = !isToday ? t('historicalDay') : closed ? t('operationsClosed') : t('operationsOpen');
+      $('toggleOperations').hidden = !isToday;
+      $('toggleOperations').textContent = closed ? t('reopenOperations') : t('endOperations');
+      SERVICES.forEach((_, i) => { $('addService' + i).disabled = !staff || !isToday || closed || adjusting; });
+    }
+    function refreshStoredRecords() { return true; }
+    async function addCustomer(service) {
+      if(!staff||adjusting||!Number.isInteger(service)||service<0||service>=SERVICES.length)return;
+      if($('day').value!==today()||closedDays()[operationKey()]){ $('feedback').textContent=t('clickBlocked');return; }
+      try{await SharedDashboard.mutate('increment',{day:today(),service});$('feedback').textContent=t('added')+' '+SERVICES[service];}
+      catch(e){$('feedback').textContent=e.message;}
+    }
+    function showSession() {
+
+      document.body.classList.toggle('authenticated', !!staff); $('login').classList.toggle('open', !staff);
+      $('day').max = today(); $('day').value = today(); setAdjusting(false); render(); loadDay();
+    }
+    $('loginForm').onsubmit = async e => {
+      e.preventDefault(); const button=$('loginForm').querySelector('button');button.disabled=true;
+      try{await SharedDashboard.login($('staffNumber').value.trim());$('loginError').textContent='';$('loginForm').reset();}
+      catch(e){$('loginError').textContent=e.message;}finally{button.disabled=false;}
+    };
+    $('logout').onclick = async () => { if($('monthDialog').open)$('monthDialog').close();try{await SharedDashboard.logout();}catch(e){$('feedback').textContent=e.message;} };
+    $('language').onchange = e => { lang = e.target.value; localStorage.setItem('Kedai Tenaga TNB Bidor-cs-language', lang); $('feedback').textContent = ''; render() };
+    $('day').onchange = () => { setAdjusting(false); loadDay(); }; $('dailyForm').oninput = updateDailyTotal; $('month').onchange = () => { if (!$('month').value) $('month').value = today().slice(0, 7); render(); };
+    $('dailyForm').onsubmit = async e => {
+      e.preventDefault();if(!staff||!updateDailyTotal())return;
+      const day=$('day').value, counts=SERVICES.map((_,i)=>Number($('serviceCount'+i).value));
+      const legacy=$('legacyEntry').hidden?0:Number($('legacyCount').value), expectedVersion=editingVersion;
+      $('save').disabled=true;
+      try{await SharedDashboard.mutate('correct',{day,counts,legacy,expectedVersion});setAdjusting(false);loadDay();render();$('feedback').textContent=t('saved');}
+      catch(e){setAdjusting(false);loadDay();$('feedback').textContent=e.message;}
+      finally{$('save').disabled=false;}
+    };
+    $('rows').onclick = e => { const button = e.target.closest('[data-day]'); if (!button) return; $('day').value = button.dataset.day; setAdjusting(true); loadDay(); $('dailyForm').scrollIntoView({ behavior: 'smooth', block: 'center' }); $('serviceCount0').focus() };
+    $('export').onclick = () => {
+      const list = visible(); if (!list.length) { $('feedback').textContent = t('noExport'); return }
+      const csv = '\uFEFF' + [['Date', 'Staff ID', 'Service', 'Customers attended'], ...list.map(r => [r.day, r.staff, serviceName(r.service), r.count])].map(row => row.map(value => '"' + String(value).replace(/"/g, '""') + '"').join(',')).join('\r\n');
+      const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })), a = document.createElement('a');
+      a.href = url; a.download = 'daily-customer-counts.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    };
+    $('openMonthBreakdown').onclick = () => { if (!staff) return; render(); $('monthDialog').showModal(); };
+    $('closeMonthDialog').onclick = () => $('monthDialog').close();
+    $('monthDialog').onclick = e => {
+      if (e.target !== $('monthDialog')) return;
+      const bounds = $('monthDialog').getBoundingClientRect();
+      if (e.clientX < bounds.left || e.clientX > bounds.right || e.clientY < bounds.top || e.clientY > bounds.bottom) $('monthDialog').close();
+    };
+    $('breakdownMonthInput').onchange = () => { $('month').value = $('breakdownMonthInput').value || today().slice(0, 7); render(); };
+    function filterServices() {
+      const query=$('serviceSearch').value.trim().toLocaleLowerCase(); let visible=0;
+      SERVICES.forEach((name,i) => { const row=$('addService'+i).parentElement; row.hidden=!(name.toLocaleLowerCase().includes(query) || String(i+1)===query); if (!row.hidden) visible++; });
+      $('noServices').hidden=visible>0;
+    }
+    function setAdjusting(value) {
+      adjusting=value; $('dailyForm').classList.toggle('is-adjusting',value);
+      $('adjustCounts').setAttribute('aria-pressed',String(value)); $('adjustCounts').textContent=value ? t('doneAdjusting') : t('adjustCounts');
+      SERVICES.forEach((_,i) => $('serviceCount'+i).readOnly=!value); updateOperationState();
+    }
+    $('adjustCounts').onclick=() => { if (adjusting) loadDay(); setAdjusting(!adjusting); };
+    $('serviceSearch').oninput=filterServices;
+    $('serviceEntries').onclick = e => { const button = e.target.closest('[data-add-service]'); if (button && !button.disabled) addCustomer(Number(button.dataset.addService)); };
+    $('toggleOperations').onclick = async () => {
+      if(!staff||$('day').value!==today())return;
+      try{await SharedDashboard.mutate('close',{day:today(),closed:!closedDays()[operationKey()]});$('feedback').textContent=$('operationStatus').textContent;}
+      catch(e){$('feedback').textContent=e.message;}
+    };
+    let lastToday = today();
+    function checkNewDay() {
+      const current = today();
+      if (current === lastToday) return;
+      if ($('day').value === lastToday) $('day').value = current;
+      if ($('month').value === lastToday.slice(0, 7)) $('month').value = current.slice(0, 7);
+      lastToday = current; $('day').max = current; refreshStoredRecords(); loadDay(); render();
+    }
+    setInterval(checkNewDay, 10000);
+    document.addEventListener('visibilitychange', () => { if (!document.hidden) checkNewDay(); });
+    buildServiceEntries();
+    $('month').value = today().slice(0, 7);
+    SharedDashboard.onChange(next=>{
+      const previousStaff=staff;staff=next?.staff||null;records=next?.records||[];sharedVersions=next?.versions||{};sharedClosed=next?.closed||{};
+      if(previousStaff!==staff)showSession();else{if(!adjusting)loadDay();render();}
+    });
+    showSession(); SharedDashboard.start();
+  </script>
+</body>
+
+</html>

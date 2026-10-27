@@ -1,0 +1,10 @@
+sites/
+deployments/
+tests/
+.git/
+.openai/
+.env*
+DEPLOYMENT.md
+README.md
+*.tar.gz
+*.zip

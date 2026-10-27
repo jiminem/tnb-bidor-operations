@@ -1,8 +1,22 @@
 /* Shared presentation helpers. Dashboard records remain in their existing storage. */
 globalThis.DashboardUI = {
+  clockLanguage: 'en',
+  clockTimer: null,
   updateDate(lang) {
+    this.clockLanguage = lang;
+    this.paintClock();
+    if (this.clockTimer === null) this.clockTimer = setInterval(() => this.paintClock(), 1000);
+  },
+  paintClock() {
+    const now = new Date(), locale = this.clockLanguage === 'ms' ? 'ms-MY' : 'en-GB';
     const element = document.getElementById('dashboardDate');
-    if (element) element.textContent = new Intl.DateTimeFormat(lang === 'ms' ? 'ms-MY' : 'en-GB', {timeZone:'Asia/Kuala_Lumpur',weekday:'short',day:'numeric',month:'long',year:'numeric'}).format(new Date());
+    if (element) element.textContent = new Intl.DateTimeFormat(locale, {timeZone:'Asia/Kuala_Lumpur',weekday:'short',day:'numeric',month:'long',year:'numeric'}).format(now);
+    const clock = document.getElementById('dashboardTime');
+    if (clock) {
+      clock.textContent = new Intl.DateTimeFormat(locale, {timeZone:'Asia/Kuala_Lumpur',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'}).format(now);
+      clock.dateTime = now.toISOString();
+      clock.title = this.clockLanguage === 'ms' ? 'Waktu Malaysia (UTC+8)' : 'Malaysia time (UTC+8)';
+    }
   },
   dailyTrend(records,lang) {
     const element=document.getElementById('dailyTrend'); if (!element) return;

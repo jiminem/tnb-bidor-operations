@@ -320,3 +320,7 @@ body.auth-pending .login { display:none }
 }
 
 .comparison-hover-point:focus { stroke:var(--blue); stroke-width:2; outline:none }
+
+.dashboard-clock { color:var(--navy); font-size:13px; font-weight:700; font-variant-numeric:tabular-nums; min-width:62px }
+.clock-divider { width:1px; height:16px; background:var(--line); margin-inline:3px }
+@media(max-width:440px) { .heading-meta { gap:6px } .dashboard-clock { font-size:12px } }

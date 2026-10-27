@@ -2,7 +2,7 @@
 (function(root){
   const daysIn=month=>new Date(Date.UTC(Number(month.slice(0,4)),Number(month.slice(5,7)),0)).getUTCDate();
   const previous=month=>{const d=new Date(month+'-01T12:00:00Z');d.setUTCMonth(d.getUTCMonth()-1);return d.toISOString().slice(0,7);};
-  function compare(records,services,month,baseline,staff='',range='full',currentDay){
+  function compare(records,services,month,baseline,staff='',range='full',currentDay,serviceOrder){
     const current=currentDay||new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kuala_Lumpur',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
     const limit=m=>Math.min(daysIn(m),m===current.slice(0,7)?Number(current.slice(8)):daysIn(m));
     const matched=Math.min(limit(month),limit(baseline));
@@ -10,7 +10,7 @@
     const sets=[month,baseline].map((m,i)=>records.filter(r=>r.day.startsWith(m)&&(!staff||r.staff===staff)&&Number(r.day.slice(8))<=bounds[i]));
     const sum=rows=>rows.reduce((n,r)=>n+r.count,0);
     const totals=sets.map(sum),change=totals[0]-totals[1];
-    const keys=services.map((name,id)=>({id,name,number:id+1}));
+    const keys=(serviceOrder || services.map((_,id)=>id)).map((id,index)=>({id,name:services[id],number:index+1}));
     if(sets.some(rows=>rows.some(r=>r.service==='uncategorized')))keys.push({id:'uncategorized',name:'Previous totals (unassigned)',number:'—'});
     const rows=keys.map(item=>{const values=sets.map(s=>sum(s.filter(r=>r.service===item.id)));return {...item,values,change:values[0]-values[1]};});
     function trend(service='all') {return sets.map((set,i)=>{let total=0;return Array.from({length:bounds[i]},(_,d)=>{total+=sum(set.filter(r=>Number(r.day.slice(8))===d+1&&(service==='all'||String(r.service)===String(service))));return total;});});}
@@ -31,7 +31,7 @@
     const staffIds=[...new Set(records.map(r=>r.staff))].sort();
     $('analysisStaff').innerHTML=`<option value="">${pick('All staff','Semua staf')}</option>`+staffIds.map(id=>`<option value="${esc(id)}">${esc(id)}</option>`).join('');
     $('analysisStaff').value=staffIds.includes(oldStaff)?oldStaff:'';
-    const model=compare(records,services,month,baseline,$('analysisStaff').value,$('analysisRange').value||'full');
+    const model=compare(records,services,month,baseline,$('analysisStaff').value,$('analysisRange').value||'full',undefined,args.serviceOrder);
     const oldService=$('analysisService').value||'all';
     $('analysisService').innerHTML=`<option value="all">${pick('All services','Semua perkhidmatan')}</option>`+model.rows.map(r=>`<option value="${r.id}">${r.number}. ${esc(r.id==='uncategorized'?pick('Previous totals (unassigned)','Jumlah terdahulu (tanpa kategori)'):r.name)}</option>`).join('');
     $('analysisService').value=oldService==='all'||model.rows.some(r=>String(r.id)===oldService)?oldService:'all';

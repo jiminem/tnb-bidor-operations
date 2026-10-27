@@ -324,3 +324,7 @@ body.auth-pending .login { display:none }
 .dashboard-clock { color:var(--navy); font-size:13px; font-weight:700; font-variant-numeric:tabular-nums; min-width:62px }
 .clock-divider { width:1px; height:16px; background:var(--line); margin-inline:3px }
 @media(max-width:440px) { .heading-meta { gap:6px } .dashboard-clock { font-size:12px } }
+
+.record-remark { white-space: pre-wrap; overflow-wrap: anywhere; max-width: 24rem; }
+.service-entry-row[hidden] { display: none; }
+#serviceRemark { width: 100%; resize: vertical; }

@@ -52,3 +52,14 @@ test('database/API: parallel staff, idempotency, conflicts, authentication and s
     // End only the test process; pg's idle timers would otherwise keep it alive briefly.
   }
 });
+
+test('combined special services preserve previous totals and save staff remarks',()=>{
+ const state=S.initial(),day=S.today(),staff='10077218',counts=Array(22).fill(0);counts[16]=2;counts[21]=3;
+ state.daily[day+'|'+staff]={counts,legacy:0,version:1};
+ let snap=S.snapshot(state);assert.equal(snap.records.find(r=>r.service===16).count,5);assert(!snap.records.some(r=>r.service===21));
+ S.mutate(state,staff,{action:'remark',day,remark:'Updated customer documents',expectedVersion:1});
+ assert.equal(S.snapshot(state).remarks[day+'|'+staff],'Updated customer documents');
+ assert.throws(()=>S.mutate(state,staff,{action:'remark',day,remark:'stale',expectedVersion:1}),{status:409});
+ S.mutate(state,staff,{action:'correct',day,counts,expectedVersion:2});
+ snap=S.snapshot(state);assert.equal(snap.records[0].count,5);assert.equal(snap.remarks[day+'|'+staff],'Updated customer documents');
+});

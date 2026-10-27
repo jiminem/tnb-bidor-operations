@@ -9,6 +9,7 @@
 
   <script src="dashboard-ui.js"></script>
   <script src="shared-client.js"></script>
+  <script src="monthly-analysis.js"></script>
 </head>
 
 <body class="daily-page auth-pending">
@@ -117,7 +118,20 @@
         <div class="dialog-month-filter"><label for="breakdownMonthInput" id="dialogMonthLabel">Month</label><input
             class="control" type="month" id="breakdownMonthInput" required><span class="helper"
             id="breakdownMonth"></span></div>
-        <div id="serviceBreakdown" class="service-list"></div>
+        <div class="comparison-controls">
+          <div class="field"><label id="compareMonthLabel" for="compareMonth">Compare with</label><input class="control" type="month" id="compareMonth" required></div>
+          <div class="field"><label id="analysisStaffLabel" for="analysisStaff">Staff</label><select class="control" id="analysisStaff"></select></div>
+          <div class="field"><label id="analysisRangeLabel" for="analysisRange">Period</label><select class="control" id="analysisRange"><option value="full">Full available month</option><option value="matched">Same day range</option></select></div>
+        </div>
+        <div class="analysis-content">
+          <p class="helper" id="comparisonNote"></p>
+          <div class="comparison-summary" id="comparisonSummary" aria-live="polite"></div>
+          <section class="comparison-trend" aria-labelledby="comparisonTrendTitle">
+            <div class="analysis-heading"><h3 id="comparisonTrendTitle">Cumulative customers by day</h3><select class="control" id="analysisService" aria-label="Service trend"></select></div>
+            <div id="comparisonLegend" class="comparison-legend"></div><div id="comparisonChart"></div><p class="helper" id="comparisonTrendNote"></p>
+          </section>
+          <section aria-labelledby="serviceCompareTitle"><div class="analysis-heading"><h3 id="serviceCompareTitle">Compare services</h3><select class="control" id="analysisSort" aria-label="Sort services"><option value="number">Service number</option><option value="volume">Highest volume</option><option value="change">Largest change</option></select></div><p class="helper" id="serviceCompareHint">Click a service to explore its daily trend.</p><div id="serviceBreakdown" class="comparison-services"></div></section>
+        </div>
       </dialog>
     </main>
   </div>
@@ -213,10 +227,7 @@
       list.forEach(r => { const key = r.day + '|' + r.staff; const item = days.get(key) || { day: r.day, staff: r.staff, count: 0 }; item.count += r.count; days.set(key, item); });
       $('rows').innerHTML = days.size ? [...days.values()].map(r => `<tr><td>${esc(r.day)}</td><td>${esc(r.staff)}</td><td>${r.count}</td><td>${r.staff === staff ? `<button class="action-link" data-day="${esc(r.day)}">${t('edit')}</button>` : ''}</td></tr>`).join('') : `<tr><td colspan="4" class="empty">${t('empty')}</td></tr>`;
       $('breakdownMonth').textContent = monthName; $('breakdownMonthInput').value = selectedMonth;
-      const serviceTotals = SERVICES.map((name, i) => ({ name, count: sum(list.filter(r => r.service === i)), number: i + 1 }));
-      const legacy = list.filter(r => r.service === LEGACY_SERVICE);
-      if (legacy.length) serviceTotals.push({ name: t('legacy'), count: sum(legacy), number: '\u2014' });
-      $('serviceBreakdown').innerHTML = serviceTotals.map(item => `<div class="service-item"><span class="service-number">${item.number}</span><span>${esc(item.name)}</span><strong>${item.count}</strong></div>`).join('');
+      globalThis.MonthlyAnalysis?.render({records,services:SERVICES,lang,month:selectedMonth});
       $('summary').textContent = `${days.size} ${lang === 'ms' ? 'rekod' : 'records'} · ${sum(list)} ${lang === 'ms' ? 'pelanggan' : 'customers'}`;
     }
     function loadDay() {

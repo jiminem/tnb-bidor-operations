@@ -271,3 +271,52 @@ body.auth-pending .login { display:none }
 .session-spinner { display:inline-block; width:28px; height:28px; border:3px solid #dce8f2; border-top-color:var(--blue); border-radius:50%; animation:session-spin .8s linear infinite }
 @keyframes session-spin { to { transform:rotate(360deg) } }
 @media(prefers-reduced-motion:reduce) { .session-spinner { animation:none } }
+
+.month-dialog { width:min(1080px,calc(100% - 32px)) }
+.dialog-month-filter { padding-bottom:8px }
+.comparison-controls { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; padding:8px 24px 0 }
+.analysis-content { padding:0 24px 24px }
+.comparison-summary { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:12px; margin:18px 0 22px }
+.analysis-stat { padding:18px; background:#f7f9fc; border:1px solid var(--line); border-radius:10px; font-size:12px; color:var(--muted) }
+.analysis-stat strong { display:block; font-size:29px; color:var(--navy); margin:8px 0 3px; font-variant-numeric:tabular-nums }
+.analysis-stat small { font-size:11px }
+.analysis-stat .increase { color:#13845b }
+.analysis-stat .decrease { color:#ab6634 }
+.series-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; background:#0878c9 }
+.series-dot.baseline { background:#9c7cc8 }
+.comparison-trend { padding:18px; border:1px solid var(--line); border-radius:10px; margin-bottom:24px }
+.analysis-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap }
+.analysis-heading h3 { font-size:14px; margin:0 }
+.analysis-heading .control { width:auto; max-width:350px; height:38px; font-size:11px }
+.comparison-legend { display:flex; flex-wrap:wrap; gap:18px; font-size:11px; color:var(--muted); margin:14px 0 2px }
+#comparisonChart svg { width:100%; height:auto; display:block; max-height:260px }
+#comparisonChart text { fill:var(--muted); font-size:10px; font-family:inherit }
+.comparison-service { display:grid; grid-template-columns:minmax(0,1.25fr) minmax(100px,1fr) 85px; gap:16px; align-items:center; width:100%; padding:16px 10px; border:0; border-bottom:1px solid var(--line); border-radius:6px; background:white; text-align:left; color:var(--ink) }
+.comparison-service:hover { background:#f6fafe }
+.comparison-service.selected { background:#edf6fd; box-shadow:inset 3px 0 var(--blue) }
+.comparison-service-title { display:grid; grid-template-columns:22px minmax(0,1fr); gap:8px; font-size:12px; line-height:1.6 }
+.comparison-bars { display:grid; gap:7px }
+.comparison-bar-line { display:flex; gap:10px; align-items:center }
+.comparison-bar-line strong { min-width:35px; text-align:right; font-size:11px; font-variant-numeric:tabular-nums }
+.comparison-bar-track { display:block; flex:1; height:7px; background:#eaf0f6; border-radius:6px; overflow:hidden }
+.comparison-bar-track i { display:block; height:100%; background:#0878c9; border-radius:6px }
+.comparison-bar-line.baseline i { background:#9c7cc8 }
+.comparison-change { text-align:right; font-variant-numeric:tabular-nums; font-size:12px }
+.comparison-change small { display:block; color:var(--muted); font-size:10px; margin-top:3px }
+.analysis-empty { background:#f7f9fc; padding:16px; font-size:12px; border-radius:8px; color:var(--muted) }
+@media(max-width:600px) {
+ .comparison-controls { grid-template-columns:1fr; gap:12px; padding-inline:18px }
+ .analysis-content { padding-inline:18px }
+ .comparison-summary { gap:8px }
+ .analysis-stat { padding:12px 10px; font-size:10px }
+ .analysis-stat strong { font-size:23px }
+ .analysis-stat small { font-size:10px }
+ .comparison-trend { padding:14px }
+ .analysis-heading .control { width:100%; max-width:none }
+ .comparison-service { grid-template-columns:minmax(0,1fr) 65px; gap:8px 12px; padding:14px 8px }
+ .comparison-service-title { grid-column:1; font-size:11px }
+ .comparison-change { grid-column:2; grid-row:1/3 }
+ .comparison-bars { grid-column:1; grid-row:2; padding-left:30px }
+}
+
+.comparison-hover-point:focus { stroke:var(--blue); stroke-width:2; outline:none }

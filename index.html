@@ -209,7 +209,7 @@
       'Pertanyaan / Permohonan Aduan Lampu Jalan',
       'Pertanyaan / Semakan Bil / Tunggakan',
       'Aduan Bekalan / Gangguan',
-      'Pertanyaan / Semakan / Cetak Bil / Statement Bil',
+      'Pertanyaan / Semakan / Cetak Bil / Statement Bil / Tunggakan',
       'Pertanyaan / Permohonan TOU / Smart Meter',
       'Pertanyaan / Aduan EC',
       'Pertanyaan / Permohonan Solar ATAP',
@@ -222,7 +222,9 @@
       'Lain-lain'
     ];
     const SERVICE_ORDER = [...Array(16).keys(), 17, 18, 19, 20, 16, 21];
-    const serviceNumber = i => SERVICE_ORDER.indexOf(i) + 1;
+    const RETIRED_SERVICE = 9;
+    const ACTIVE_SERVICE_ORDER = SERVICE_ORDER.filter(i => i !== RETIRED_SERVICE && i !== 21);
+    const serviceNumber = i => ACTIVE_SERVICE_ORDER.indexOf(i) + 1;
     const LEGACY_SERVICE = 'uncategorized';
     const $ = id => document.getElementById(id);
     const today = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuala_Lumpur', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
@@ -244,7 +246,7 @@
       SERVICES.forEach((_, i) => { $('serviceGroup' + i).textContent = GROUP_NAMES[lang][SERVICE_GROUPS[i]]; $('serviceUnit' + i).textContent = lang === 'ms' ? 'pelanggan' : 'customers'; });
     }
     function buildServiceEntries() {
-      $('serviceEntries').innerHTML = SERVICE_ORDER.map(i => { const name = SERVICES[i]; return `<div class="service-entry-row click-service-row tone-${SERVICE_GROUPS[i]}" ${i === 21 ? 'hidden' : ''} data-service-row="${i}"><button type="button" class="service-add" id="addService${i}" data-add-service="${i}"><span class="service-number" aria-hidden="true">${String(serviceNumber(i)).padStart(2, '0')}</span><span class="service-group" id="serviceGroup${i}"></span><span class="service-name" id="serviceName${i}">${esc(name)}</span><span class="service-card-footer"><span class="service-current"><span class="service-badge" id="serviceBadge${i}">0</span><span class="service-unit" id="serviceUnit${i}"></span></span><span class="add-one" aria-hidden="true">+1</span></span></button><input class="control service-count" type="number" id="serviceCount${i}" aria-labelledby="serviceName${i}" min="0" max="100000" step="1" value="0" required inputmode="numeric" readonly>${i === 16 ? `<div class="field"><label for="serviceRemark" id="remarkLabel">Remark:</label><textarea class="control" id="serviceRemark" rows="3" maxlength="2000"></textarea><button type="button" class="btn btn-quiet" id="saveRemark">Save remark</button></div>` : ''}</div>`; }).join('');
+      $('serviceEntries').innerHTML = SERVICE_ORDER.map(i => { const name = SERVICES[i]; return `<div class="service-entry-row click-service-row tone-${SERVICE_GROUPS[i]}" ${i === RETIRED_SERVICE || i === 21 ? 'hidden' : ''} data-service-row="${i}"><button type="button" class="service-add" id="addService${i}" data-add-service="${i}"><span class="service-number" aria-hidden="true">${String(serviceNumber(i)).padStart(2, '0')}</span><span class="service-group" id="serviceGroup${i}"></span><span class="service-name" id="serviceName${i}">${esc(name)}</span><span class="service-card-footer"><span class="service-current"><span class="service-badge" id="serviceBadge${i}">0</span><span class="service-unit" id="serviceUnit${i}"></span></span><span class="add-one" aria-hidden="true">+1</span></span></button><input class="control service-count" type="number" id="serviceCount${i}" aria-labelledby="serviceName${i}" min="0" max="100000" step="1" value="0" required inputmode="numeric" readonly>${i === 16 ? `<div class="field"><label for="serviceRemark" id="remarkLabel">Remark:</label><textarea class="control" id="serviceRemark" rows="3" maxlength="2000"></textarea><button type="button" class="btn btn-quiet" id="saveRemark">Save remark</button></div>` : ''}</div>`; }).join('');
       renderServiceLabels();
     }
     function updateDailyTotal() {
@@ -274,7 +276,7 @@
       list.forEach(r => { const key = r.day + '|' + r.staff; const item = days.get(key) || { day: r.day, staff: r.staff, count: 0 }; item.count += r.count; days.set(key, item); });
       $('rows').innerHTML = days.size ? [...days.values()].map(r => `<tr><td>${esc(r.day)}</td><td>${esc(r.staff)}</td><td>${r.count}</td><td class="record-remark">${esc(sharedRemarks[r.day + '|' + r.staff] || '')}</td><td>${r.staff === staff ? `<button class="action-link" data-day="${esc(r.day)}">${t('edit')}</button>` : ''}</td></tr>`).join('') : `<tr><td colspan="5" class="empty">${t('empty')}</td></tr>`;
       $('breakdownMonth').textContent = monthName; $('breakdownMonthInput').value = selectedMonth;
-      globalThis.MonthlyAnalysis?.render({ records, services: SERVICES.slice(0, 21), serviceOrder: SERVICE_ORDER.slice(0, 21), lang, month: selectedMonth });
+      globalThis.MonthlyAnalysis?.render({ records, services: SERVICES.slice(0, 21), serviceOrder: ACTIVE_SERVICE_ORDER, lang, month: selectedMonth });
       $('summary').textContent = `${days.size} ${lang === 'ms' ? 'rekod' : 'records'} · ${sum(list)} ${lang === 'ms' ? 'pelanggan' : 'customers'}`;
     }
     function loadDay() {
@@ -302,7 +304,7 @@
     }
     function refreshStoredRecords() { return true; }
     async function addCustomer(service) {
-      if (!staff || adjusting || !Number.isInteger(service) || service < 0 || service >= SERVICES.length) return;
+      if (!staff || adjusting || !ACTIVE_SERVICE_ORDER.includes(service)) return;
       if ($('day').value !== today() || closedDays()[operationKey()]) { $('feedback').textContent = t('clickBlocked'); return; }
       try { await SharedDashboard.mutate('increment', { day: today(), service }); $('feedback').textContent = t('added') + ' ' + SERVICES[service]; }
       catch (e) { $('feedback').textContent = e.message; }
@@ -346,7 +348,7 @@
     $('breakdownMonthInput').onchange = () => { $('month').value = $('breakdownMonthInput').value || today().slice(0, 7); render(); };
     function filterServices() {
       const query = $('serviceSearch').value.trim().toLocaleLowerCase(); let visible = 0;
-      SERVICES.forEach((name, i) => { const row = $('addService' + i).parentElement; row.hidden = i === 21 || !(name.toLocaleLowerCase().includes(query) || String(serviceNumber(i)) === query); if (!row.hidden) visible++; });
+      SERVICES.forEach((name, i) => { const row = $('addService' + i).parentElement; row.hidden = !ACTIVE_SERVICE_ORDER.includes(i) || !(name.toLocaleLowerCase().includes(query) || String(serviceNumber(i)) === query); if (!row.hidden) visible++; });
       $('noServices').hidden = visible > 0;
     }
     function setAdjusting(value) {

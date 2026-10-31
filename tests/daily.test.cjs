@@ -4,7 +4,9 @@ function el(id){let value='';const e={textContent:'',hidden:false,disabled:false
 for(const m of html.split('<script>')[0].matchAll(/id="([^"]+)"/g))els[m[1]]=el(m[1]);
 let state=S.initial(),notify,staff='10077218';
 const shared={onChange(fn){notify=fn},start(){notify({staff,...S.snapshot(state)})},async mutate(action,values){S.mutate(state,staff,{action,...values});notify({staff,...S.snapshot(state)});},async login(id){staff=id;this.start();},async logout(){notify(null)}};
-const ctx={console,Intl,Date,setInterval(){},SharedDashboard:shared,window:{addEventListener(){}},localStorage:{getItem(){return null},setItem(){}},document:{getElementById:id=>els[id],documentElement:{},addEventListener(){},body:{classList:{toggle(){}}}}};
+let exported;
+const xlsx=require('../vendor/xlsx.full.min.js');
+const ctx={XLSX:{...xlsx,writeFile(book,name){exported={book,name}}},console,Intl,Date,setInterval(){},SharedDashboard:shared,window:{addEventListener(){}},localStorage:{getItem(){return null},setItem(){}},document:{getElementById:id=>els[id],documentElement:{},addEventListener(){},body:{classList:{toggle(){}}}}};
 vm.createContext(ctx);vm.runInContext(fs.readFileSync('dashboard-ui.js','utf8'),ctx);vm.runInContext(html.match(/<script>([\s\S]*?)<\/script>/)[1],ctx);const run=s=>vm.runInContext(s,ctx);
 (async()=>{
  await run('addCustomer(0)');await run('addCustomer(0)');assert.equal(els.todayTotal.textContent,2);assert.equal(els.serviceBadge0.textContent,'2');
@@ -15,6 +17,17 @@ vm.createContext(ctx);vm.runInContext(fs.readFileSync('dashboard-ui.js','utf8'),
  await els.toggleOperations.onclick();assert.equal(els.addService0.disabled,true);await els.toggleOperations.onclick();assert.equal(els.addService0.disabled,false);
  els.openMonthBreakdown.onclick();assert(els.monthDialog.open);els.closeMonthDialog.onclick();assert(!els.monthDialog.open);
  els.language.onchange({target:{value:'ms'}});assert.equal(els.entryTitle.textContent,'Kaunter perkhidmatan');
+ await run('addCustomer(16)');await run('addCustomer(16)');
+ assert.match(els.remarkEntries.innerHTML,/customerRemark1/);
+ els.remarkEntries.oninput({target:{dataset:{remarkIndex:'0'},value:'First customer, follow-up'}});
+ els.remarkEntries.oninput({target:{dataset:{remarkIndex:'1'},value:'Second customer\nResolved'}});
+ await els.saveRemark.onclick();shared.start();
+ assert.deepEqual(Array.from(S.snapshot(state).remarkEntries[S.today()+'|'+staff]),['First customer, follow-up','Second customer\nResolved']);
+ assert.match(els.remarkEntries.innerHTML,/Second customer/);
+ els.export.onclick();assert.deepEqual(exported.book.SheetNames,['Summary','Service details','Customer remarks']);
+ const remarkRows=xlsx.utils.sheet_to_json(exported.book.Sheets['Customer remarks'],{header:1});
+ assert.equal(remarkRows[2][3],'Second customer\nResolved');
+ assert.match(exported.name,/\.xlsx$/);
  await els.logout.onclick();assert.equal(els.staffLabel.textContent,'');
  console.log('PASS daily shared UI: live staff snapshots, counts, search, corrections/conflicts, operations, popup, translations, logout.');
 })().catch(e=>{console.error(e);process.exitCode=1});

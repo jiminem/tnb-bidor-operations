@@ -328,3 +328,7 @@ body.auth-pending .login { display:none }
 .record-remark { white-space: pre-wrap; overflow-wrap: anywhere; max-width: 24rem; }
 .service-entry-row[hidden] { display: none; }
 #serviceRemark { width: 100%; resize: vertical; }
+
+#remarkEntries { display:grid; gap:12px; max-height:420px; overflow-y:auto; padding:2px; }
+.customer-remark label { display:block; margin-bottom:6px; font-size:.85rem; font-weight:600; }
+.customer-remark textarea { width:100%; min-width:0; }

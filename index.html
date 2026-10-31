@@ -1,4 +1,4 @@
-﻿<!doctype html>
+Ã¯Â»Â¿<!doctype html>
 <html lang="en">
 
 <head>
@@ -10,6 +10,7 @@
   <script src="dashboard-ui.js"></script>
   <script src="shared-client.js"></script>
   <script src="monthly-analysis.js"></script>
+  <script src="vendor/xlsx.full.min.js"></script>
 </head>
 
 <body class="daily-page auth-pending">
@@ -100,7 +101,7 @@
           <div class="table-top"><strong id="recordsTitle">Daily records</strong>
             <div class="toolbar-actions"><label for="month" id="monthFilterLabel">Month</label><input class="control"
                 type="month" id="month" required aria-describedby="monthPeriod"><button class="btn btn-quiet"
-                id="export">Export CSV</button></div>
+                id="export">Export Excel</button></div>
           </div>
           <div class="table-wrap">
             <table class="table">
@@ -123,7 +124,7 @@
         <div class="table-top">
           <div>
             <h2 id="trendTitle">Customer activity</h2>
-            <p class="helper" id="trendHelp">Customers attended over the last 7 days · all staff</p>
+            <p class="helper" id="trendHelp">Customers attended over the last 7 days Ã‚Â· all staff</p>
           </div><span class="status-pill" id="trendRange">Last 7 days</span>
         </div>
         <div id="dailyTrend" class="trend-chart"></div>
@@ -228,11 +229,11 @@
     const LEGACY_SERVICE = 'uncategorized';
     const $ = id => document.getElementById(id);
     const today = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kuala_Lumpur', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
-    let records = [], staff = null, sharedVersions = {}, sharedClosed = {}, sharedRemarks = {}, remarkDirty = false, remarkVersion = 0, editingVersion = 0, loadedDay = '';
+    let records = [], staff = null, sharedVersions = {}, sharedClosed = {}, sharedRemarks = {}, sharedRemarkEntries = {}, remarkDirty = false, remarkVersion = 0, editingVersion = 0, loadedDay = '';
     let lang = localStorage.getItem('Kedai Tenaga TNB Bidor-cs-language') === 'ms' ? 'ms' : 'en';
     const text = {
-      en: { remarkHeading: 'Remark', remarkLabel: 'Services completed:', saveRemark: 'Save remark', remarkSaved: 'Remark saved.', adjustCounts: 'Adjust counts', doneAdjusting: 'Cancel changes', noServices: 'No matching services.', trendTitle: 'Customer activity', trendHelp: 'Customers attended over the last 7 days · all staff', trendRange: 'Last 7 days', endOperations: "End today's operations", reopenOperations: "Reopen today's operations", operationsOpen: 'Open · customer clicks save automatically', operationsClosed: 'Closed · counting paused for today', historicalDay: 'Previous day · use Adjust counts to make corrections', added: 'Customer added and saved.', clickBlocked: 'Select today and reopen operations to count customers.', clickLimit: 'This service has reached its daily limit.', monthHint: 'View service breakdown', closeMonthDialog: 'Close', dialogMonthLabel: 'Month', dailyTotalLabel: 'Your daily total', legacyLabel: 'Previous totals (no service assigned)', legacyHelp: 'Previous unassigned counts are included below. When assigning them to services, reduce the unassigned count to avoid counting twice.', serviceLabel: 'Service type', serviceHeading: 'Service', breakdownTitle: 'Monthly customers by service', legacy: 'Previous totals (no service assigned)', chooseService: 'Choose service type', invalidService: 'Choose a service type.', dailyNav: 'Daily Operations', crpNav: 'CRP Dashboard', eyebrow: 'Daily operations', title: 'Customers Attended', subtitle: 'Record how many customers you attended each day.', todayLabel: 'Customers today', monthLabel: 'Customers by month', monthFilterLabel: 'Month', allLabel: 'Customers overall', entryTitle: 'Service counter', entryHelp: "Click a service once for each customer attended. Counts save immediately. Use Adjust counts to make corrections.", dayLabel: 'Date', countLabel: 'Number of customers attended', entryNote: 'Each click adds one customer for your staff ID. Count each customer under one main service.', save: 'Save corrections', recordsTitle: 'Daily records', export: 'Export CSV', dateHeading: 'Date', staffHeading: 'Staff ID', countHeading: 'Customers attended', storageNote: 'Shared across staff devices', logout: 'Log out', empty: 'No daily totals yet.', edit: 'Edit', saved: 'Daily total saved to shared data.', failed: 'Could not save. Please try again.', future: 'Choose today or an earlier date.', invalid: 'Enter a whole number from 0 to 100,000.', noExport: 'No records to export.' },
-      ms: { remarkHeading: 'Catatan', remarkLabel: 'Perkhidmatan selesai:', saveRemark: 'Simpan catatan', remarkSaved: 'Catatan disimpan.', adjustCounts: 'Ubah bilangan', doneAdjusting: 'Batal perubahan', noServices: 'Tiada perkhidmatan sepadan.', trendTitle: 'Aktiviti pelanggan', trendHelp: 'Pelanggan dilayan sepanjang 7 hari lalu · semua staf', trendRange: '7 hari lalu', endOperations: 'Tamatkan operasi hari ini', reopenOperations: 'Buka semula operasi hari ini', operationsOpen: 'Dibuka · klik pelanggan disimpan automatik', operationsClosed: 'Ditutup · kiraan hari ini dijeda', historicalDay: 'Tarikh terdahulu · gunakan Ubah bilangan untuk pembetulan', added: 'Pelanggan ditambah dan disimpan.', clickBlocked: 'Pilih hari ini dan buka operasi untuk mengira pelanggan.', clickLimit: 'Perkhidmatan ini telah mencapai had harian.', monthHint: 'Lihat pecahan perkhidmatan', closeMonthDialog: 'Tutup', dialogMonthLabel: 'Bulan', dailyTotalLabel: 'Jumlah harian anda', legacyLabel: 'Jumlah terdahulu (tiada jenis perkhidmatan)', legacyHelp: 'Jumlah terdahulu disertakan dalam jumlah harian. Kurangkan jumlah tanpa kategori apabila mengagihkannya kepada perkhidmatan supaya tidak dikira dua kali.', serviceLabel: 'Jenis perkhidmatan', serviceHeading: 'Perkhidmatan', breakdownTitle: 'Pelanggan bulanan mengikut perkhidmatan', legacy: 'Jumlah terdahulu (tiada jenis perkhidmatan)', chooseService: 'Pilih jenis perkhidmatan', invalidService: 'Pilih jenis perkhidmatan.', dailyNav: 'Operasi Harian', crpNav: 'Papan Pemuka CRP', eyebrow: 'Operasi harian', title: 'Pelanggan dilayan', subtitle: 'Rekod jumlah pelanggan yang anda layan setiap hari.', todayLabel: 'Pelanggan hari ini', monthLabel: 'Pelanggan mengikut bulan', monthFilterLabel: 'Bulan', allLabel: 'Jumlah keseluruhan pelanggan', entryTitle: 'Kaunter perkhidmatan', entryHelp: 'Klik perkhidmatan sekali bagi setiap pelanggan dilayan. Bilangan disimpan serta-merta. Gunakan Ubah bilangan untuk pembetulan.', dayLabel: 'Tarikh', countLabel: 'Bilangan pelanggan dilayan', entryNote: 'Setiap klik menambah seorang pelanggan untuk ID staf anda. Kira setiap pelanggan di bawah satu perkhidmatan utama.', save: 'Simpan pembetulan', recordsTitle: 'Rekod harian', export: 'Eksport CSV', dateHeading: 'Tarikh', staffHeading: 'ID staf', countHeading: 'Pelanggan dilayan', storageNote: 'Dikongsi antara peranti staf', logout: 'Log keluar', empty: 'Belum ada jumlah harian.', edit: 'Edit', saved: 'Jumlah harian disimpan.', failed: 'Tidak dapat menyimpan. Sila cuba lagi.', future: 'Pilih hari ini atau tarikh sebelumnya.', invalid: 'Masukkan nombor bulat dari 0 hingga 100,000.', noExport: 'Tiada rekod untuk dieksport.' }
+      en: { remarkHeading: 'Remark', remarkLabel: 'Services completed:', saveRemark: 'Save remark', remarkSaved: 'Remark saved.', adjustCounts: 'Adjust counts', doneAdjusting: 'Cancel changes', noServices: 'No matching services.', trendTitle: 'Customer activity', trendHelp: 'Customers attended over the last 7 days Ã‚Â· all staff', trendRange: 'Last 7 days', endOperations: "End today's operations", reopenOperations: "Reopen today's operations", operationsOpen: 'Open Ã‚Â· customer clicks save automatically', operationsClosed: 'Closed Ã‚Â· counting paused for today', historicalDay: 'Previous day Ã‚Â· use Adjust counts to make corrections', added: 'Customer added and saved.', clickBlocked: 'Select today and reopen operations to count customers.', clickLimit: 'This service has reached its daily limit.', monthHint: 'View service breakdown', closeMonthDialog: 'Close', dialogMonthLabel: 'Month', dailyTotalLabel: 'Your daily total', legacyLabel: 'Previous totals (no service assigned)', legacyHelp: 'Previous unassigned counts are included below. When assigning them to services, reduce the unassigned count to avoid counting twice.', serviceLabel: 'Service type', serviceHeading: 'Service', breakdownTitle: 'Monthly customers by service', legacy: 'Previous totals (no service assigned)', chooseService: 'Choose service type', invalidService: 'Choose a service type.', dailyNav: 'Daily Operations', crpNav: 'CRP Dashboard', eyebrow: 'Daily operations', title: 'Customers Attended', subtitle: 'Record how many customers you attended each day.', todayLabel: 'Customers today', monthLabel: 'Customers by month', monthFilterLabel: 'Month', allLabel: 'Customers overall', entryTitle: 'Service counter', entryHelp: "Click a service once for each customer attended. Counts save immediately. Use Adjust counts to make corrections.", dayLabel: 'Date', countLabel: 'Number of customers attended', entryNote: 'Each click adds one customer for your staff ID. Count each customer under one main service.', save: 'Save corrections', recordsTitle: 'Daily records', export: 'Export Excel', dateHeading: 'Date', staffHeading: 'Staff ID', countHeading: 'Customers attended', storageNote: 'Shared across staff devices', logout: 'Log out', empty: 'No daily totals yet.', edit: 'Edit', saved: 'Daily total saved to shared data.', failed: 'Could not save. Please try again.', future: 'Choose today or an earlier date.', invalid: 'Enter a whole number from 0 to 100,000.', noExport: 'No records to export.' },
+      ms: { remarkHeading: 'Catatan', remarkLabel: 'Perkhidmatan selesai:', saveRemark: 'Simpan catatan', remarkSaved: 'Catatan disimpan.', adjustCounts: 'Ubah bilangan', doneAdjusting: 'Batal perubahan', noServices: 'Tiada perkhidmatan sepadan.', trendTitle: 'Aktiviti pelanggan', trendHelp: 'Pelanggan dilayan sepanjang 7 hari lalu Ã‚Â· semua staf', trendRange: '7 hari lalu', endOperations: 'Tamatkan operasi hari ini', reopenOperations: 'Buka semula operasi hari ini', operationsOpen: 'Dibuka Ã‚Â· klik pelanggan disimpan automatik', operationsClosed: 'Ditutup Ã‚Â· kiraan hari ini dijeda', historicalDay: 'Tarikh terdahulu Ã‚Â· gunakan Ubah bilangan untuk pembetulan', added: 'Pelanggan ditambah dan disimpan.', clickBlocked: 'Pilih hari ini dan buka operasi untuk mengira pelanggan.', clickLimit: 'Perkhidmatan ini telah mencapai had harian.', monthHint: 'Lihat pecahan perkhidmatan', closeMonthDialog: 'Tutup', dialogMonthLabel: 'Bulan', dailyTotalLabel: 'Jumlah harian anda', legacyLabel: 'Jumlah terdahulu (tiada jenis perkhidmatan)', legacyHelp: 'Jumlah terdahulu disertakan dalam jumlah harian. Kurangkan jumlah tanpa kategori apabila mengagihkannya kepada perkhidmatan supaya tidak dikira dua kali.', serviceLabel: 'Jenis perkhidmatan', serviceHeading: 'Perkhidmatan', breakdownTitle: 'Pelanggan bulanan mengikut perkhidmatan', legacy: 'Jumlah terdahulu (tiada jenis perkhidmatan)', chooseService: 'Pilih jenis perkhidmatan', invalidService: 'Pilih jenis perkhidmatan.', dailyNav: 'Operasi Harian', crpNav: 'Papan Pemuka CRP', eyebrow: 'Operasi harian', title: 'Pelanggan dilayan', subtitle: 'Rekod jumlah pelanggan yang anda layan setiap hari.', todayLabel: 'Pelanggan hari ini', monthLabel: 'Pelanggan mengikut bulan', monthFilterLabel: 'Bulan', allLabel: 'Jumlah keseluruhan pelanggan', entryTitle: 'Kaunter perkhidmatan', entryHelp: 'Klik perkhidmatan sekali bagi setiap pelanggan dilayan. Bilangan disimpan serta-merta. Gunakan Ubah bilangan untuk pembetulan.', dayLabel: 'Tarikh', countLabel: 'Bilangan pelanggan dilayan', entryNote: 'Setiap klik menambah seorang pelanggan untuk ID staf anda. Kira setiap pelanggan di bawah satu perkhidmatan utama.', save: 'Simpan pembetulan', recordsTitle: 'Rekod harian', export: 'Eksport Excel', dateHeading: 'Tarikh', staffHeading: 'ID staf', countHeading: 'Pelanggan dilayan', storageNote: 'Dikongsi antara peranti staf', logout: 'Log keluar', empty: 'Belum ada jumlah harian.', edit: 'Edit', saved: 'Jumlah harian disimpan.', failed: 'Tidak dapat menyimpan. Sila cuba lagi.', future: 'Pilih hari ini atau tarikh sebelumnya.', invalid: 'Masukkan nombor bulat dari 0 hingga 100,000.', noExport: 'Tiada rekod untuk dieksport.' }
     };
     let adjusting = false;
     const t = key => text[lang][key];
@@ -245,8 +246,9 @@
       $('serviceLegend').innerHTML = GROUP_NAMES[lang].map((name, i) => `<span class="legend-chip tone-${i}"><span class="legend-dot" aria-hidden="true"></span>${esc(name)}</span>`).join('');
       SERVICES.forEach((_, i) => { $('serviceGroup' + i).textContent = GROUP_NAMES[lang][SERVICE_GROUPS[i]]; $('serviceUnit' + i).textContent = lang === 'ms' ? 'pelanggan' : 'customers'; });
     }
+    let remarkDraft = [];
     function buildServiceEntries() {
-      $('serviceEntries').innerHTML = SERVICE_ORDER.map(i => { const name = SERVICES[i]; return `<div class="service-entry-row click-service-row tone-${SERVICE_GROUPS[i]}" ${i === RETIRED_SERVICE || i === 21 ? 'hidden' : ''} data-service-row="${i}"><button type="button" class="service-add" id="addService${i}" data-add-service="${i}"><span class="service-number" aria-hidden="true">${String(serviceNumber(i)).padStart(2, '0')}</span><span class="service-group" id="serviceGroup${i}"></span><span class="service-name" id="serviceName${i}">${esc(name)}</span><span class="service-card-footer"><span class="service-current"><span class="service-badge" id="serviceBadge${i}">0</span><span class="service-unit" id="serviceUnit${i}"></span></span><span class="add-one" aria-hidden="true">+1</span></span></button><input class="control service-count" type="number" id="serviceCount${i}" aria-labelledby="serviceName${i}" min="0" max="100000" step="1" value="0" required inputmode="numeric" readonly>${i === 16 ? `<div class="field"><label for="serviceRemark" id="remarkLabel">Remark:</label><textarea class="control" id="serviceRemark" rows="3" maxlength="2000"></textarea><button type="button" class="btn btn-quiet" id="saveRemark">Save remark</button></div>` : ''}</div>`; }).join('');
+      $('serviceEntries').innerHTML = SERVICE_ORDER.map(i => { const name = SERVICES[i]; return `<div class="service-entry-row click-service-row tone-${SERVICE_GROUPS[i]}" ${i === RETIRED_SERVICE || i === 21 ? 'hidden' : ''} data-service-row="${i}"><button type="button" class="service-add" id="addService${i}" data-add-service="${i}"><span class="service-number" aria-hidden="true">${String(serviceNumber(i)).padStart(2, '0')}</span><span class="service-group" id="serviceGroup${i}"></span><span class="service-name" id="serviceName${i}">${esc(name)}</span><span class="service-card-footer"><span class="service-current"><span class="service-badge" id="serviceBadge${i}">0</span><span class="service-unit" id="serviceUnit${i}"></span></span><span class="add-one" aria-hidden="true">+1</span></span></button><input class="control service-count" type="number" id="serviceCount${i}" aria-labelledby="serviceName${i}" min="0" max="100000" step="1" value="0" required inputmode="numeric" readonly>${i === 16 ? `<div class="field"><label for="serviceRemark" id="remarkLabel">Remark:</label><div id="remarkEntries"></div><button type="button" class="btn btn-quiet" id="saveRemark">Save remark</button></div>` : ''}</div>`; }).join('');
       renderServiceLabels();
     }
     function updateDailyTotal() {
@@ -262,7 +264,7 @@
       $('staffLabel').textContent = staff || ''; renderServiceLabels(); updateDailyTotal(); updateOperationState();
       $('serviceSearch').placeholder = lang === 'ms' ? 'Cari perkhidmatan...' : 'Find a service...';
       $('serviceSearch').setAttribute('aria-label', $('serviceSearch').placeholder);
-      $('adjustCounts').textContent = adjusting ? t('doneAdjusting') : t('adjustCounts');
+      renderRemarkEntries(); $('adjustCounts').textContent = adjusting ? t('doneAdjusting') : t('adjustCounts');
       globalThis.DashboardUI?.updateDate(lang); globalThis.DashboardUI?.dailyTrend(records, lang);
       const sum = list => list.reduce((n, r) => n + r.count, 0);
       $('todayTotal').textContent = sum(records.filter(r => r.day === today()));
@@ -277,12 +279,12 @@
       $('rows').innerHTML = days.size ? [...days.values()].map(r => `<tr><td>${esc(r.day)}</td><td>${esc(r.staff)}</td><td>${r.count}</td><td class="record-remark">${esc(sharedRemarks[r.day + '|' + r.staff] || '')}</td><td>${r.staff === staff ? `<button class="action-link" data-day="${esc(r.day)}">${t('edit')}</button>` : ''}</td></tr>`).join('') : `<tr><td colspan="5" class="empty">${t('empty')}</td></tr>`;
       $('breakdownMonth').textContent = monthName; $('breakdownMonthInput').value = selectedMonth;
       globalThis.MonthlyAnalysis?.render({ records, services: SERVICES.slice(0, 21), serviceOrder: ACTIVE_SERVICE_ORDER, lang, month: selectedMonth });
-      $('summary').textContent = `${days.size} ${lang === 'ms' ? 'rekod' : 'records'} · ${sum(list)} ${lang === 'ms' ? 'pelanggan' : 'customers'}`;
+      $('summary').textContent = `${days.size} ${lang === 'ms' ? 'rekod' : 'records'} Ã‚Â· ${sum(list)} ${lang === 'ms' ? 'pelanggan' : 'customers'}`;
     }
     function loadDay() {
       const changedDay = loadedDay !== $('day').value;
       loadedDay = $('day').value;
-      if (changedDay || !remarkDirty) { $('serviceRemark').value = sharedRemarks[loadedDay + '|' + staff] || ''; remarkDirty = false; } editingVersion = sharedVersions[loadedDay + '|' + staff] || 0;
+      if (changedDay || !remarkDirty) { remarkDraft = [...(sharedRemarkEntries[loadedDay + '|' + staff] || (sharedRemarks[loadedDay + '|' + staff] ? [sharedRemarks[loadedDay + '|' + staff]] : []))]; remarkDirty = false; } editingVersion = sharedVersions[loadedDay + '|' + staff] || 0;
       const dayRecords = records.filter(r => r.staff === staff && r.day === $('day').value);
       SERVICES.forEach((_, i) => { $('serviceCount' + i).value = dayRecords.filter(r => r.service === i).reduce((n, r) => n + r.count, 0); });
       const legacy = dayRecords.filter(r => r.service === LEGACY_SERVICE);
@@ -290,7 +292,7 @@
       $('legacyCount').value = legacy.reduce((n, r) => n + r.count, 0);
       $('feedback').textContent = ''; updateDailyTotal(); updateOperationState();
       SERVICES.forEach((_, i) => $('serviceBadge' + i).textContent = $('serviceCount' + i).value);
-      filterServices();
+      renderRemarkEntries(); filterServices();
     }
     function closedDays() { return sharedClosed; }
     function operationKey() { return today() + '|' + staff; }
@@ -306,7 +308,8 @@
     async function addCustomer(service) {
       if (!staff || adjusting || !ACTIVE_SERVICE_ORDER.includes(service)) return;
       if ($('day').value !== today() || closedDays()[operationKey()]) { $('feedback').textContent = t('clickBlocked'); return; }
-      try { await SharedDashboard.mutate('increment', { day: today(), service }); $('feedback').textContent = t('added') + ' ' + SERVICES[service]; }
+      const draftVersion = editingVersion, draftDay = $('day').value;
+      try { await SharedDashboard.mutate('increment', { day: today(), service }); if (remarkDirty && remarkVersion === draftVersion && $('day').value === draftDay && editingVersion === draftVersion + 1) remarkVersion = editingVersion; $('feedback').textContent = t('added') + ' ' + SERVICES[service]; }
       catch (e) { $('feedback').textContent = e.message; }
     }
     function showSession() {
@@ -334,9 +337,23 @@
     $('rows').onclick = e => { const button = e.target.closest('[data-day]'); if (!button) return; $('day').value = button.dataset.day; setAdjusting(true); loadDay(); $('dailyForm').scrollIntoView({ behavior: 'smooth', block: 'center' }); $('serviceCount0').focus() };
     $('export').onclick = () => {
       const list = visible(); if (!list.length) { $('feedback').textContent = t('noExport'); return }
-      const csv = '\uFEFF' + [['Date', 'Staff ID', 'Service', 'Customers attended', 'Remark'], ...list.map(r => [r.day, r.staff, serviceName(r.service), r.count, r.service === 16 ? sharedRemarks[r.day + '|' + r.staff] || '' : ''])].map(row => row.map(value => '"' + String(value).replace(/"/g, '""') + '"').join(',')).join('\r\n');
-      const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' })), a = document.createElement('a');
-      a.href = url; a.download = 'daily-customer-counts.csv'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      const workbook = XLSX.utils.book_new();
+      const total = list.reduce((sum, r) => sum + r.count, 0);
+      const summary = [['TNB BIDOR ? CUSTOMER SERVICE REPORT'], ['Exported', new Date().toLocaleString('en-GB', { timeZone: 'Asia/Kuala_Lumpur' })], ['Customers attended', total], [], ['Date', 'Staff ID', 'Customers attended', 'Remarks']];
+      const grouped = new Map();
+      list.forEach(r => { const key = r.day + '|' + r.staff; const item = grouped.get(key) || [r.day, r.staff, 0, sharedRemarks[key] || '']; item[2] += r.count; grouped.set(key, item); });
+      summary.push(...grouped.values(), [], ['TOTAL', '', total]);
+      const detail = [['Date', 'Staff ID', 'Service', 'Customers attended', 'Remarks'], ...list.map(r => [r.day, r.staff, serviceName(r.service), r.count, r.service === 16 ? sharedRemarks[r.day + '|' + r.staff] || '' : ''])];
+      const remarks = [['Date', 'Staff ID', 'Customer / remark no.', 'Remark']];
+      list.filter(r => r.service === 16).forEach(r => (sharedRemarkEntries[r.day + '|' + r.staff] || [sharedRemarks[r.day + '|' + r.staff] || '']).forEach((value, i) => remarks.push([r.day, r.staff, i + 1, value])));
+      for (const [name, rows, widths] of [['Summary', summary, [16, 18, 24, 80]], ['Service details', detail, [16, 18, 58, 24, 80]], ['Customer remarks', remarks, [16, 18, 24, 80]]]) {
+        const sheet = XLSX.utils.aoa_to_sheet(rows);
+        sheet['!cols'] = widths.map(wch => ({ wch }));
+        if (name === 'Summary') sheet['!merges'] = [XLSX.utils.decode_range('A1:D1')];
+        else sheet['!autofilter'] = { ref: sheet['!ref'] };
+        XLSX.utils.book_append_sheet(workbook, sheet, name);
+      }
+      XLSX.writeFile(workbook, 'TNB-Bidor-customer-report-' + today() + '.xlsx');
     };
     $('openMonthBreakdown').onclick = () => { if (!staff) return; render(); $('monthDialog').showModal(); };
     $('closeMonthDialog').onclick = () => $('monthDialog').close();
@@ -358,12 +375,24 @@
     }
     $('adjustCounts').onclick = () => { if (adjusting) loadDay(); setAdjusting(!adjusting); };
     buildServiceEntries();
-    $('serviceRemark').oninput = () => { if (!remarkDirty) remarkVersion = editingVersion; remarkDirty = true; };
+    function renderRemarkEntries() {
+      const count = Math.max(Number($('serviceCount16').value) || 0, remarkDraft.length);
+      const active = document.activeElement;
+      const focusIndex = active?.dataset?.remarkIndex;
+      const selectionStart = active?.selectionStart, selectionEnd = active?.selectionEnd;
+      $('remarkEntries').innerHTML = Array.from({ length: count }, (_, i) => `<div class="customer-remark"><label for="customerRemark${i}">${lang === 'ms' ? 'Catatan pelanggan' : 'Customer remark'} ${i + 1}</label><textarea class="control" id="customerRemark${i}" data-remark-index="${i}" rows="2" maxlength="2000">${esc(remarkDraft[i] || '')}</textarea></div>`).join('') || `<p>${lang === 'ms' ? 'Klik +1 untuk menambah catatan.' : 'Click +1 to add a customer remark.'}</p>`;
+      if (focusIndex !== undefined) { const field = $('customerRemark' + focusIndex); field?.focus(); field?.setSelectionRange(selectionStart, selectionEnd); }
+    }
+    $('remarkEntries').oninput = e => {
+      if (e.target.dataset.remarkIndex === undefined) return;
+      if (!remarkDirty) remarkVersion = editingVersion;
+      remarkDirty = true; remarkDraft[Number(e.target.dataset.remarkIndex)] = e.target.value;
+    };
     $('saveRemark').onclick = async () => {
       if (!staff) return;
-      const day = $('day').value, remark = $('serviceRemark').value;
+      const day = $('day').value, entries = Array.from({ length: Math.max(Number($('serviceCount16').value), remarkDraft.length) }, (_, i) => remarkDraft[i] || '');
       $('saveRemark').disabled = true;
-      try { await SharedDashboard.mutate('remark', { day, remark, expectedVersion: remarkDirty ? remarkVersion : editingVersion }); remarkDirty = false; loadDay(); $('feedback').textContent = t('remarkSaved'); }
+      try { await SharedDashboard.mutate('remark', { day, entries, expectedVersion: remarkDirty ? remarkVersion : editingVersion }); remarkDirty = false; loadDay(); $('feedback').textContent = t('remarkSaved'); }
       catch (e) { $('feedback').textContent = e.message; }
       finally { $('saveRemark').disabled = false; }
     };
@@ -386,7 +415,7 @@
     document.addEventListener('visibilitychange', () => { if (!document.hidden) checkNewDay(); });
     $('month').value = today().slice(0, 7);
     SharedDashboard.onChange(next => {
-      const previousStaff = staff; staff = next?.staff || null; records = next?.records || []; sharedVersions = next?.versions || {}; sharedClosed = next?.closed || {}; sharedRemarks = next?.remarks || {}; if (previousStaff !== staff) { remarkDirty = false; loadedDay = ''; }
+      const previousStaff = staff; staff = next?.staff || null; records = next?.records || []; sharedVersions = next?.versions || {}; sharedClosed = next?.closed || {}; sharedRemarks = next?.remarks || {}; sharedRemarkEntries = next?.remarkEntries || {}; if (previousStaff !== staff) { remarkDirty = false; loadedDay = ''; }
       if (previousStaff !== staff) showSession(); else { if (!adjusting) loadDay(); render(); }
     });
     showSession(); SharedDashboard.start();
